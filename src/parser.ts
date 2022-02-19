@@ -16,7 +16,6 @@ export function parse(data: DataView): DataSet {
     ({ group }) => group !== 2
   );
   offset = metaOffsetEnd;
-  console.log(meta);
 
   // read transfer syntax and set implicitness and endianness accordingly
   let contentImplicitVR = false;
@@ -29,8 +28,6 @@ export function parse(data: DataView): DataSet {
     const transferSyntax = stringTrimNull(
       decoder.decode(transferSyntaxDataView)
     );
-
-    console.debug(`transfer Syntax: ${transferSyntax}"`);
 
     if (
       transferSyntax === "1.2.840.10008.1.2" // Implicit VR Little Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/chapter_A.html)
