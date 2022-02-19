@@ -133,11 +133,11 @@ function readDataElement(
 
   // read VR
   let vr: VR | null = null;
-  if (!isImplicitVR(options, tag)) {
+  if (!options.implicitVR && !tagHasImplicitVR(tag)) {
     vr = getVR(data, offset);
     offset += 2;
     if (!vr) {
-      console.warn("Implicit VR found but option was not set.");
+      console.warn("No Explicit VR found and implicit option was not set.");
       offset -= 2;
     }
   }
@@ -187,18 +187,6 @@ function readDataElement(
   return [{ tag, vr, value }, offsetEnd];
 }
 
-function isImplicitVR(options: ParseOptions, tag: Tag) {
-  if (
-    equalTag(tag, ItemTag) ||
-    equalTag(tag, ItemDelimitationItemTag) ||
-    equalTag(tag, SequenceDelimitationItemTag)
-  ) {
-    // these Tags always use implicit VR (see DICOM part 05 section 7.5)
-    return true;
-  }
-  return options.implicitVR;
-}
-
 // -- VR --
 // https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_6.2.html
 // prettier-ignore
@@ -239,6 +227,15 @@ function equalTag(tagA: Tag, tagB: Tag) {
 function tagToString(tag: Tag) {
   const toPaddedHex = (n: number) => n.toString(16).padStart(4, "0");
   return `(${toPaddedHex(tag.group)},${toPaddedHex(tag.element)})`;
+}
+
+function tagHasImplicitVR(tag: Tag) {
+  // these Tags always use implicit VR (see DICOM part 05 section 7.5)
+  return (
+    equalTag(tag, ItemTag) ||
+    equalTag(tag, ItemDelimitationItemTag) ||
+    equalTag(tag, SequenceDelimitationItemTag)
+  );
 }
 
 // -- DataLocation --
