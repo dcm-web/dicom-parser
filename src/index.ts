@@ -53,11 +53,6 @@ export function parse(data: DataView): DataSet {
     implicitVR: contentImplicitVR,
     littleEndian: contentLittleEndian,
   });
-  console.log(
-    Object.values(content).map(
-      (d) => `${tagToString(d.tag)} ${d.vr || "--"} (${d.value.length})`
-    )
-  );
 
   return { ...meta, ...content };
 }
