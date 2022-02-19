@@ -226,7 +226,7 @@ export function dataViewAtLocation(
 
 // -- Utils --
 /**
- * Trim trailing null characters (\0) from a string.
+ * Trim trailing null characters (\\0) from a string.
  *
  * @param str - String to trim the trailing null characters of.
  * @returns Trimmed string.
