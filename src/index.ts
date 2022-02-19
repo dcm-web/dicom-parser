@@ -24,11 +24,7 @@ export function parse(data: DataView): DataElementRecord {
   const transferSyntaxDataElement = meta["(0002,0010)"];
   if (transferSyntaxDataElement) {
     const dataLocation = transferSyntaxDataElement.value;
-    const transferSyntaxDataView = new DataView(
-      data.buffer,
-      data.byteOffset + dataLocation.offset,
-      dataLocation.length
-    );
+    const transferSyntaxDataView = dataViewAtLocation(data, dataLocation);
     const decoder = new TextDecoder("windows-1252");
     const transferSyntax = stringTrimNull(
       decoder.decode(transferSyntaxDataView)
@@ -71,7 +67,6 @@ type ParseOptions = {
   littleEndian: boolean;
 };
 
-type DataLocation = { offset: number; length: number };
 type DataElement = {
   tag: Tag;
   vr: string | null;
@@ -209,6 +204,19 @@ function equalTag(tagA: Tag, tagB: Tag) {
 function tagToString(tag: Tag) {
   const toPaddedHex = (n: number) => n.toString(16).padStart(4, "0");
   return `(${toPaddedHex(tag.group)},${toPaddedHex(tag.element)})`;
+}
+
+// -- DataLocation --
+type DataLocation = { offset: number; length: number };
+export function dataViewAtLocation(
+  data: DataView,
+  dataLocation: DataLocation
+): DataView {
+  return new DataView(
+    data.buffer,
+    data.byteOffset + dataLocation.offset,
+    dataLocation.length
+  );
 }
 
 // -- Utils --
