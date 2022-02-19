@@ -13,7 +13,7 @@ export function parse(data: DataView): DataSet {
     data,
     offset,
     { implicitVR: false, littleEndian: true },
-    ({ group }) => group !== 2
+    (tag) => (tag.group !== 2 ? "stop" : "continue")
   );
   offset = metaOffsetEnd;
 
@@ -66,6 +66,13 @@ type DataElement = {
 };
 type DataSet = Record<string, DataElement>;
 
+type ParseStopOption =
+  | "continue"
+  | "stop"
+  | "stopAndIncludeOffset"
+  | "stopAndIncludeElement";
+type ParseStopCondition = (tag: Tag) => ParseStopOption;
+
 export function readSequenceItems(
   data: DataView,
   offsetStart: number,
@@ -76,26 +83,36 @@ export function readSequenceItems(
     if (!isSequenceEnd && !equalTag(tag, ItemTag)) {
       console.warn(`Expected ItemTag but found tag "${tagToString(tag)}".`);
     }
-    return equalTag(tag, SequenceDelimitationItemTag);
+    return isSequenceEnd ? "stopAndIncludeOffset" : "continue";
   };
   return readDataSet(data, offsetStart, options, stopCondition);
 }
 
+/**
+ * Parse a DataSet from a DataView.
+ *
+ * @param data - The DataView to read from.
+ * @param offsetStart - The offset in the data to start reading at.
+ * @param options - Options regarding endianness and VR implicitness.
+ * @param stopCondition - Optional callback to stop the parsing (and include or discard the current dataElement and offset) when its tag meets a certain condition.
+ * @returns The parsed DataSet and the current offset in the data.
+ */
 function readDataSet(
   data: DataView,
   offsetStart: number,
   options: ParseOptions,
-  stopCondition?: (tag: Tag) => boolean
+  stopCondition?: ParseStopCondition
 ): [DataSet, number] {
   const elements: DataSet = {};
   let offset = offsetStart;
   while (offset < data.byteLength) {
     const [element, offsetEnd] = readDataElement(data, offset, options);
-    if (stopCondition && stopCondition(element.tag)) {
-      break;
-    }
-    elements[tagToString(element.tag)] = element;
+    const stopOption = stopCondition && stopCondition(element.tag);
+    if (stopOption && stopOption === "stop") break; // stop before current element
     offset = offsetEnd;
+    if (stopOption && stopOption === "stopAndIncludeOffset") break; // include the offset but discard the current element
+    elements[tagToString(element.tag)] = element;
+    if (stopOption && stopOption === "stopAndIncludeElement") break; // include the current element
   }
   return [elements, offset];
 }
@@ -144,14 +161,27 @@ function readDataElement(
 
   // read value
   let value: DataLocation;
+
   if (length != 0xffffffff) {
     value = { offset, length };
     return [{ tag, vr, value }, offset + length];
   }
+
+  if (equalTag(tag, ItemTag)) {
+    const [, offsetEnd] = readDataSet(data, offset, options, (tag) =>
+      equalTag(tag, ItemDelimitationItemTag)
+        ? "stopAndIncludeOffset"
+        : "continue"
+    );
+    value = { offset, length: offsetEnd - offset };
+    return [{ tag, vr, value }, offsetEnd];
+  }
+
   if (equalTag(tag, PixelDataTag)) {
     value = { offset, length: data.byteLength - offset };
     return [{ tag, vr, value }, data.byteLength];
   }
+
   const [, offsetEnd] = readSequenceItems(data, offset, options);
   value = { offset, length: offsetEnd - offset };
   return [{ tag, vr, value }, offsetEnd];
