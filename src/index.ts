@@ -1,4 +1,4 @@
-export function parse(data: DataView): DataElementRecord {
+export function parse(data: DataView): DataSet {
   let offset = 128; // skip 128 bytes of file preamble
   const prefix = data.getUint32(offset);
   offset += 4;
@@ -9,7 +9,7 @@ export function parse(data: DataView): DataElementRecord {
   }
 
   // read Metadata
-  const [meta, metaOffsetEnd] = readDataElementRecord(
+  const [meta, metaOffsetEnd] = readDataSet(
     data,
     offset,
     { implicitVR: false, littleEndian: true },
@@ -49,7 +49,7 @@ export function parse(data: DataView): DataElementRecord {
   }
 
   // read content
-  const [content] = readDataElementRecord(data, offset, {
+  const [content] = readDataSet(data, offset, {
     implicitVR: contentImplicitVR,
     littleEndian: contentLittleEndian,
   });
@@ -72,15 +72,30 @@ type DataElement = {
   vr: string | null;
   value: DataLocation;
 };
-type DataElementRecord = Record<string, DataElement>;
+type DataSet = Record<string, DataElement>;
 
-function readDataElementRecord(
+export function readSequenceItems(
+  data: DataView,
+  offsetStart: number,
+  options: ParseOptions
+): [DataSet, number] {
+  const stopCondition = (tag: Tag) => {
+    const isSequenceEnd = equalTag(tag, SequenceDelimitationItemTag);
+    if (!isSequenceEnd && !equalTag(tag, ItemTag)) {
+      console.warn(`Expected ItemTag but found tag "${tagToString(tag)}".`);
+    }
+    return equalTag(tag, SequenceDelimitationItemTag);
+  };
+  return readDataSet(data, offsetStart, options, stopCondition);
+}
+
+function readDataSet(
   data: DataView,
   offsetStart: number,
   options: ParseOptions,
   stopCondition?: (tag: Tag) => boolean
-): [DataElementRecord, number] {
-  const elements: DataElementRecord = {};
+): [DataSet, number] {
+  const elements: DataSet = {};
   let offset = offsetStart;
   while (offset < data.byteLength) {
     const [element, offsetEnd] = readDataElement(data, offset, options);
@@ -145,9 +160,7 @@ function readDataElement(
     value = { offset, length: data.byteLength - offset };
     return [{ tag, vr, value }, data.byteLength];
   }
-  const [, offsetEnd] = readDataElementRecord(data, offset, options, (tag) =>
-    equalTag(tag, SequenceDelimitationItemTag)
-  );
+  const [, offsetEnd] = readSequenceItems(data, offset, options);
   value = { offset, length: offsetEnd - offset };
   return [{ tag, vr, value }, offsetEnd];
 }
