@@ -33,7 +33,7 @@ fileSets.forEach((fileSet) => {
         const expectedTags = readJson(fileSet, file);
         const dataView = readDataView(fileSet, file);
 
-        const dataSet = parser.parse(dataView);
+        const { dataSet } = parser.parse(dataView);
         const tags = Object.keys(dataSet);
 
         const extraTags = tags.filter((tag) => !expectedTags.includes(tag));

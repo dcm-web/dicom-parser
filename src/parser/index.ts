@@ -1,7 +1,10 @@
-import { DataSet, readDataSet } from "./core";
+import { DataEncoding, DataSet, readDataSet } from "./core";
 import * as utils from "./utils";
 
-export function parse(data: DataView): DataSet {
+export function parse(data: DataView): {
+  dataSet: DataSet;
+  encoding: DataEncoding;
+} {
   let offset = 128; // skip 128 bytes of file preamble
   const prefix = data.getUint32(offset);
   offset += 4;
@@ -36,5 +39,5 @@ export function parse(data: DataView): DataSet {
   // read content
   const [content] = readDataSet(data, offset, dataEncoding);
 
-  return { ...meta, ...content };
+  return { dataSet: { ...meta, ...content }, encoding: dataEncoding };
 }
