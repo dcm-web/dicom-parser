@@ -24,11 +24,9 @@ export function dataViewAtLocation(
  * @returns Trimmed string.
  */
 export function stringTrimNull(str: string) {
-  let nullChars = 0;
-  while (str.charAt(str.length - 1 - nullChars) === "\0") {
-    nullChars++;
-  }
-  return str.slice(0, -nullChars);
+  let end = str.length - 1;
+  while (str.charAt(end) === "\0") end--;
+  return str.substring(0, end + 1);
 }
 
 /**
