@@ -1,93 +1,3 @@
-export function parse(data: DataView): DataSet {
-  let offset = 128; // skip 128 bytes of file preamble
-  const prefix = data.getUint32(offset);
-  offset += 4;
-
-  // verify the DICOM prefix bytes to be 44 49 43 4D ("DICM")
-  if (prefix !== 0x4449434d) {
-    throw Error("Invalid DICOM file - prefix not found.");
-  }
-
-  // read Metadata
-  const [meta, metaOffsetEnd] = readDataSet(
-    data,
-    offset,
-    { implicitVR: false, littleEndian: true },
-    (tag) => (tag.group !== 2 ? "stop" : "continue")
-  );
-  offset = metaOffsetEnd;
-
-  // read transfer syntax and set implicitness and endianness accordingly
-  let contentImplicitVR = false;
-  let contentLittleEndian = true;
-  const transferSyntaxDataElement = meta["(0002,0010)"];
-  if (transferSyntaxDataElement) {
-    const dataLocation = transferSyntaxDataElement.value;
-    const transferSyntaxDataView = dataViewAtLocation(data, dataLocation);
-    const decoder = new TextDecoder("windows-1252");
-    const transferSyntax = stringTrimNull(
-      decoder.decode(transferSyntaxDataView)
-    );
-
-    if (
-      transferSyntax === "1.2.840.10008.1.2" // Implicit VR Little Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/chapter_A.html)
-    ) {
-      contentImplicitVR = true;
-    } else if (
-      transferSyntax === "1.2.840.10008.1.2.2" // Explicit VR Big Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.3.html)
-    ) {
-      contentLittleEndian = false;
-    } else if (
-      transferSyntax === "1.2.840.10008.1.2.1.99" || // Deflated Explicit VR Little Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.5.html)
-      transferSyntax === "1.2.840.10008.1.2.4.95" // JPIP Referenced Deflate (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.7.html)
-    ) {
-      throw Error("Deflated transfer syntax is not yet implemented"); // TODO implement
-    }
-  }
-
-  // read content
-  const [content] = readDataSet(data, offset, {
-    implicitVR: contentImplicitVR,
-    littleEndian: contentLittleEndian,
-  });
-
-  return { ...meta, ...content };
-}
-
-type ParseOptions = {
-  implicitVR: boolean;
-  littleEndian: boolean;
-};
-
-type DataElement = {
-  tag: Tag;
-  vr: string | null;
-  value: DataLocation;
-};
-type DataSet = Record<string, DataElement>;
-
-type ParseStopOption =
-  | "continue"
-  | "stop"
-  | "stopAndIncludeOffset"
-  | "stopAndIncludeElement";
-type ParseStopCondition = (tag: Tag) => ParseStopOption;
-
-export function readSequenceItems(
-  data: DataView,
-  offsetStart: number,
-  options: ParseOptions
-): [DataSet, number] {
-  const stopCondition = (tag: Tag) => {
-    const isSequenceEnd = equalTag(tag, SequenceDelimitationItemTag);
-    if (!isSequenceEnd && !equalTag(tag, ItemTag)) {
-      console.warn(`Expected ItemTag but found tag "${tagToString(tag)}".`);
-    }
-    return isSequenceEnd ? "stopAndIncludeOffset" : "continue";
-  };
-  return readDataSet(data, offsetStart, options, stopCondition);
-}
-
 /**
  * Parse a DataSet from a DataView.
  *
@@ -97,7 +7,7 @@ export function readSequenceItems(
  * @param stopCondition - Optional callback to stop the parsing (and include or discard the current dataElement and offset) when its tag meets a certain condition.
  * @returns The parsed DataSet and the current offset in the data.
  */
-function readDataSet(
+export function readDataSet(
   data: DataView,
   offsetStart: number,
   options: ParseOptions,
@@ -117,6 +27,14 @@ function readDataSet(
   return [elements, offset];
 }
 
+/**
+ * Read a DataElement at offsetStart from a DataView.
+ *
+ * @param data - The DataView to read from.
+ * @param offsetStart - The offset in the data to start reading at.
+ * @param options - Options regarding endianness and VR implicitness.
+ * @returns The parsed DataElement and the offset of its end in the data.
+ */
 function readDataElement(
   data: DataView,
   offsetStart: number,
@@ -187,6 +105,21 @@ function readDataElement(
   return [{ tag, vr, value }, offsetEnd];
 }
 
+export function readSequenceItems(
+  data: DataView,
+  offsetStart: number,
+  options: ParseOptions
+): [DataSet, number] {
+  const stopCondition = (tag: Tag) => {
+    const isSequenceEnd = equalTag(tag, SequenceDelimitationItemTag);
+    if (!isSequenceEnd && !equalTag(tag, ItemTag)) {
+      console.warn(`Expected ItemTag but found tag "${tagToString(tag)}".`);
+    }
+    return isSequenceEnd ? "stopAndIncludeOffset" : "continue";
+  };
+  return readDataSet(data, offsetStart, options, stopCondition);
+}
+
 // -- VR --
 // https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_6.2.html
 // prettier-ignore
@@ -238,30 +171,24 @@ function tagHasImplicitVR(tag: Tag) {
   );
 }
 
-// -- DataLocation --
-type DataLocation = { offset: number; length: number };
-export function dataViewAtLocation(
-  data: DataView,
-  dataLocation: DataLocation
-): DataView {
-  return new DataView(
-    data.buffer,
-    data.byteOffset + dataLocation.offset,
-    dataLocation.length
-  );
-}
+// -- Data --
+export type DataSet = Record<string, DataElement>;
+export type DataElement = {
+  tag: Tag;
+  vr: string | null;
+  value: DataLocation;
+};
+export type DataLocation = { offset: number; length: number };
 
-// -- Utils --
-/**
- * Trim trailing null characters (\\0) from a string.
- *
- * @param str - String to trim the trailing null characters of.
- * @returns Trimmed string.
- */
-function stringTrimNull(str: string) {
-  let nullChars = 0;
-  while (str.charAt(str.length - 1 - nullChars) === "\0") {
-    nullChars++;
-  }
-  return str.slice(0, -nullChars);
-}
+// -- Options --
+export type ParseOptions = {
+  implicitVR: boolean;
+  littleEndian: boolean;
+};
+
+type ParseStopOption =
+  | "continue"
+  | "stop"
+  | "stopAndIncludeOffset"
+  | "stopAndIncludeElement";
+type ParseStopCondition = (tag: Tag) => ParseStopOption;
