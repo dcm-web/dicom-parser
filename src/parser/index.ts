@@ -4,6 +4,7 @@ import * as utils from "./utils";
 export function parse(data: DataView): {
   dataSet: DataSet;
   encoding: DataEncoding;
+  transferSyntax: string;
 } {
   let offset = 128; // skip 128 bytes of file preamble
   const prefix = data.getUint32(offset);
@@ -24,7 +25,7 @@ export function parse(data: DataView): {
   offset = metaOffsetEnd;
 
   // read transfer syntax
-  let transferSyntax: string | undefined;
+  let transferSyntax;
   const transferSyntaxDataElement = meta["(0002,0010)"];
   if (transferSyntaxDataElement) {
     const dataLocation = transferSyntaxDataElement.value;
@@ -33,11 +34,18 @@ export function parse(data: DataView): {
     transferSyntax = utils.stringTrimNull(
       decoder.decode(transferSyntaxDataView)
     );
+  } else {
+    /** Default as defined in {@link https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_10.1 | DICOM Part 5 Section 10.1}. */
+    transferSyntax = "1.2.840.10008.1.2";
   }
   const dataEncoding = utils.dataEncodingForTransferSyntax(transferSyntax);
 
   // read content
   const [content] = readDataSet(data, offset, dataEncoding);
 
-  return { dataSet: { ...meta, ...content }, encoding: dataEncoding };
+  return {
+    dataSet: { ...meta, ...content },
+    encoding: dataEncoding,
+    transferSyntax,
+  };
 }

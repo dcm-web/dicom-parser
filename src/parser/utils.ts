@@ -31,13 +31,12 @@ export function stringTrimNull(str: string) {
 
 /**
  * Get the data encoding defined by a given transfer syntax.
- * Defaults to "1.2.840.10008.1.2" as defined in {@link https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_10.1 | DICOM Part 5 Section 10.1}
  *
  * @param transferSyntax - transfer syntax in string format
  * @returns DateEncoding as speicifed for the transfer syntax
  */
 export function dataEncodingForTransferSyntax(
-  transferSyntax = "1.2.840.10008.1.2"
+  transferSyntax: string
 ): DataEncoding {
   let implicitVR = false;
   let littleEndian = true;
