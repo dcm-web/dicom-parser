@@ -2,25 +2,52 @@ import * as fs from "fs";
 import * as parser from "../src/parser";
 import { expect } from "chai";
 
-const files = fs.readdirSync("./test/dicom-files/pydicom/"); // ["693_J2KR.dcm", "bad_sequence.dcm", "emri_small_big_endian.dcm"];
+const dicomFilesDir = "./test/dicom-files";
+const dicomTagsDir = "./test/dicom-tags";
 
-files.forEach((file) => {
-  if (fs.lstatSync("./test/dicom-files/pydicom/" + file).isDirectory()) return;
+const fileSets = ["pydicom"] as const;
+const excludeFiles: Record<typeof fileSets[number], string[]> = {
+  pydicom: [
+    "OT-PAL-8-face.dcm", // file without header
+  ],
+};
 
-  it(`parses all DataElements of DICOM file "${file}"`, () => {
-    const expectedTags = JSON.parse(
-      fs.readFileSync(`./test/dicom-tags/pydicom/${file}.json`, "utf8")
-    ) as string[];
+function readDataView(dataSet: string, file: string) {
+  const buffer = fs.readFileSync(`${dicomFilesDir}/${dataSet}/${file}`);
+  return new DataView(new Uint8Array(buffer).buffer);
+}
+function readJson(dataSet: string, file: string): string[] {
+  return JSON.parse(
+    fs.readFileSync(`${dicomTagsDir}/${dataSet}/${file}.json`, "utf8")
+  ) as string[];
+}
 
-    const data = fs.readFileSync(`./test/dicom-files/pydicom/${file}`);
-    const dataView = new DataView(new Uint8Array(data).buffer);
-    const dataSet = parser.parse(dataView);
-    const tags = Object.keys(dataSet);
+fileSets.forEach((fileSet) => {
+  const fileSetDir = `${dicomFilesDir}/${fileSet}`;
+  const files = fs.readdirSync(fileSetDir);
+  files
+    .filter((file) => !fs.lstatSync(`${fileSetDir}/${file}`).isDirectory())
+    .filter((file) => !excludeFiles[fileSet]?.includes(file))
+    .forEach((file) => {
+      it(`should parse all DataElements of DICOM file "${fileSet}/${file}"`, () => {
+        const expectedTags = readJson(fileSet, file);
+        const dataView = readDataView(fileSet, file);
 
-    const extraTags = tags.filter((tag) => !expectedTags.includes(tag));
-    const missingTags = expectedTags.filter((tag) => !tags.includes(tag));
+        const dataSet = parser.parse(dataView);
+        const tags = Object.keys(dataSet);
 
-    expect(extraTags, "extra tags").to.eql([]);
-    expect(missingTags, "missing tags").to.eql([]);
-  });
+        const extraTags = tags.filter((tag) => !expectedTags.includes(tag));
+        const missingTags = expectedTags.filter((tag) => !tags.includes(tag));
+
+        expect(extraTags, "extra tags").to.eql([]);
+        expect(missingTags, "missing tags").to.eql([]);
+      });
+    });
+});
+
+it("should not parse file without header", () => {
+  const dataView = readDataView("pydicom", "OT-PAL-8-face.dcm");
+  expect(() => parser.parse(dataView)).to.throw(
+    "Invalid DICOM file - prefix not found."
+  );
 });
