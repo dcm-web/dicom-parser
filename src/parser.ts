@@ -5,7 +5,7 @@ export function parse(data: DataView): DataSet {
 
   // verify the DICOM prefix bytes to be 44 49 43 4D ("DICM")
   if (prefix !== 0x4449434d) {
-    throw Error("Invalid DICOM file - signature not found.");
+    throw Error("Invalid DICOM file - prefix not found.");
   }
 
   // read Metadata
