@@ -12,13 +12,13 @@ const excludeFiles: Record<typeof fileSets[number], string[]> = {
   ],
 };
 
-function readDataView(dataSet: string, file: string) {
-  const buffer = fs.readFileSync(`${dicomFilesDir}/${dataSet}/${file}`);
+function readDataView(fileSet: string, file: string) {
+  const buffer = fs.readFileSync(`${dicomFilesDir}/${fileSet}/${file}`);
   return new DataView(new Uint8Array(buffer).buffer);
 }
-function readJson(dataSet: string, file: string): string[] {
+function readJson(fileSet: string, file: string): string[] {
   return JSON.parse(
-    fs.readFileSync(`${dicomTagsDir}/${dataSet}/${file}.json`, "utf8")
+    fs.readFileSync(`${dicomTagsDir}/${fileSet}/${file}.json`, "utf8")
   ) as string[];
 }
 
