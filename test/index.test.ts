@@ -12,6 +12,14 @@ const excludeFiles: Record<typeof fileSets[number], string[]> = {
   ],
 };
 
+function fileSetFiles(fileSet: string): string[] {
+  const fileSetDir = `${dicomFilesDir}/${fileSet}`;
+  const files = fs.readdirSync(fileSetDir);
+  return files.filter(
+    (file) => !fs.lstatSync(`${fileSetDir}/${file}`).isDirectory()
+  );
+}
+
 function readDataView(fileSet: string, file: string) {
   const buffer = fs.readFileSync(`${dicomFilesDir}/${fileSet}/${file}`);
   return new DataView(new Uint8Array(buffer).buffer);
@@ -23,10 +31,7 @@ function readJson(fileSet: string, file: string): string[] {
 }
 
 fileSets.forEach((fileSet) => {
-  const fileSetDir = `${dicomFilesDir}/${fileSet}`;
-  const files = fs.readdirSync(fileSetDir);
-  files
-    .filter((file) => !fs.lstatSync(`${fileSetDir}/${file}`).isDirectory())
+  fileSetFiles(fileSet)
     .filter((file) => !excludeFiles[fileSet]?.includes(file))
     .forEach((file) => {
       it(`should parse all DataElements of DICOM file "${fileSet}/${file}"`, () => {
