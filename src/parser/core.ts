@@ -10,13 +10,13 @@
 export function readDataSet(
   data: DataView,
   offsetStart: number,
-  options: ParseOptions,
+  encoding: DataEncoding,
   stopCondition?: ParseStopCondition
 ): [DataSet, number] {
   const elements: DataSet = {};
   let offset = offsetStart;
   while (offset < data.byteLength) {
-    const [element, offsetEnd] = readDataElement(data, offset, options);
+    const [element, offsetEnd] = readDataElement(data, offset, encoding);
     const stopOption = stopCondition && stopCondition(element.tag);
     if (stopOption && stopOption === "stop") break; // stop before current element
     offset = offsetEnd;
@@ -38,24 +38,24 @@ export function readDataSet(
 function readDataElement(
   data: DataView,
   offsetStart: number,
-  options: ParseOptions
+  encoding: DataEncoding
 ): [DataElement, number] {
   let offset = offsetStart;
 
   // read Tag
   const tag = {
-    group: data.getUint16(offset, options.littleEndian),
-    element: data.getUint16(offset + 2, options.littleEndian),
+    group: data.getUint16(offset, encoding.littleEndian),
+    element: data.getUint16(offset + 2, encoding.littleEndian),
   };
   offset = offset + 4;
 
   // read VR
   let vr: VR | null = null;
-  if (!options.implicitVR && !tagHasImplicitVR(tag)) {
+  if (!encoding.implicitVR && !tagHasImplicitVR(tag)) {
     vr = getVR(data, offset);
     offset += 2;
     if (!vr) {
-      console.warn("No Explicit VR found and implicit option was not set.");
+      console.warn("No Explicit VR found and implicit encoding was not set.");
       offset -= 2;
     }
   }
@@ -64,16 +64,16 @@ function readDataElement(
   let length: number;
   if (!vr) {
     // Implicit VR Format: TAG, 4-byte length, value
-    length = data.getUint32(offset, options.littleEndian);
+    length = data.getUint32(offset, encoding.littleEndian);
     offset += 4;
   } else if (dataVR.includes(vr)) {
     // Explicit Data VR Format: TAG, VR, 2-bytes reserved, 4-byte length, value
     offset += 2; // skip reserved bytes
-    length = data.getUint32(offset, options.littleEndian);
+    length = data.getUint32(offset, encoding.littleEndian);
     offset += 4;
   } else {
     // Explicit VR Format: TAG, VR, 2-byte length, value
-    length = data.getUint16(offset, options.littleEndian);
+    length = data.getUint16(offset, encoding.littleEndian);
     offset += 2;
   }
 
@@ -86,7 +86,7 @@ function readDataElement(
   }
 
   if (equalTag(tag, ItemTag)) {
-    const [, offsetEnd] = readDataSet(data, offset, options, (tag) =>
+    const [, offsetEnd] = readDataSet(data, offset, encoding, (tag) =>
       equalTag(tag, ItemDelimitationItemTag)
         ? "stopAndIncludeOffset"
         : "continue"
@@ -100,7 +100,7 @@ function readDataElement(
     return [{ tag, vr, value }, data.byteLength];
   }
 
-  const [, offsetEnd] = readSequenceItems(data, offset, options);
+  const [, offsetEnd] = readSequenceItems(data, offset, encoding);
   value = { offset, length: offsetEnd - offset };
   return [{ tag, vr, value }, offsetEnd];
 }
@@ -108,7 +108,7 @@ function readDataElement(
 export function readSequenceItems(
   data: DataView,
   offsetStart: number,
-  options: ParseOptions
+  encoding: DataEncoding
 ): [DataSet, number] {
   const stopCondition = (tag: Tag) => {
     const isSequenceEnd = equalTag(tag, SequenceDelimitationItemTag);
@@ -117,7 +117,7 @@ export function readSequenceItems(
     }
     return isSequenceEnd ? "stopAndIncludeOffset" : "continue";
   };
-  return readDataSet(data, offsetStart, options, stopCondition);
+  return readDataSet(data, offsetStart, encoding, stopCondition);
 }
 
 // -- VR --
@@ -179,13 +179,12 @@ export type DataElement = {
   value: DataLocation;
 };
 export type DataLocation = { offset: number; length: number };
-
-// -- Options --
-export type ParseOptions = {
+export type DataEncoding = {
   implicitVR: boolean;
   littleEndian: boolean;
 };
 
+// -- Options --
 type ParseStopOption =
   | "continue"
   | "stop"
