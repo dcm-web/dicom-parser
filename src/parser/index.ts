@@ -20,39 +20,21 @@ export function parse(data: DataView): DataSet {
   );
   offset = metaOffsetEnd;
 
-  // read transfer syntax and set implicitness and endianness accordingly
-  let contentImplicitVR = false;
-  let contentLittleEndian = true;
+  // read transfer syntax
+  let transferSyntax: string | undefined;
   const transferSyntaxDataElement = meta["(0002,0010)"];
   if (transferSyntaxDataElement) {
     const dataLocation = transferSyntaxDataElement.value;
     const transferSyntaxDataView = utils.dataViewAtLocation(data, dataLocation);
     const decoder = new TextDecoder("windows-1252");
-    const transferSyntax = utils.stringTrimNull(
+    transferSyntax = utils.stringTrimNull(
       decoder.decode(transferSyntaxDataView)
     );
-
-    if (
-      transferSyntax === "1.2.840.10008.1.2" // Implicit VR Little Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/chapter_A.html)
-    ) {
-      contentImplicitVR = true;
-    } else if (
-      transferSyntax === "1.2.840.10008.1.2.2" // Explicit VR Big Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.3.html)
-    ) {
-      contentLittleEndian = false;
-    } else if (
-      transferSyntax === "1.2.840.10008.1.2.1.99" || // Deflated Explicit VR Little Endian (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.5.html)
-      transferSyntax === "1.2.840.10008.1.2.4.95" // JPIP Referenced Deflate (https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.7.html)
-    ) {
-      throw Error("Deflated transfer syntax is not yet implemented"); // TODO implement
-    }
   }
+  const dataEncoding = utils.dataEncodingForTransferSyntax(transferSyntax);
 
   // read content
-  const [content] = readDataSet(data, offset, {
-    implicitVR: contentImplicitVR,
-    littleEndian: contentLittleEndian,
-  });
+  const [content] = readDataSet(data, offset, dataEncoding);
 
   return { ...meta, ...content };
 }
