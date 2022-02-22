@@ -3,7 +3,7 @@ import * as parser from "../src/parser";
 import { expect } from "chai";
 
 const dicomFilesDir = "./test/dicom-files";
-const dicomTagsDir = "./test/dicom-tags";
+const dicomDataDir = "./test/dicom-data";
 
 const fileSets = ["pydicom"] as const;
 const excludeFiles: Record<typeof fileSets[number], string[]> = {
@@ -29,7 +29,7 @@ type FileData = {
 };
 function readFileData(fileSet: string, file: string): FileData {
   return JSON.parse(
-    fs.readFileSync(`${dicomTagsDir}/${fileSet}/${file}.json`, "utf8")
+    fs.readFileSync(`${dicomDataDir}/${fileSet}/${file}.json`, "utf8")
   ) as FileData;
 }
 
