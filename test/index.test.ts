@@ -24,10 +24,13 @@ function readDataView(fileSet: string, file: string) {
   const buffer = fs.readFileSync(`${dicomFilesDir}/${fileSet}/${file}`);
   return new DataView(new Uint8Array(buffer).buffer);
 }
-function readJson(fileSet: string, file: string): string[] {
+type FileData = {
+  tags: string[];
+};
+function readFileData(fileSet: string, file: string): FileData {
   return JSON.parse(
     fs.readFileSync(`${dicomTagsDir}/${fileSet}/${file}.json`, "utf8")
-  ) as string[];
+  ) as FileData;
 }
 
 fileSets.forEach((fileSet) => {
@@ -35,7 +38,7 @@ fileSets.forEach((fileSet) => {
     .filter((file) => !excludeFiles[fileSet]?.includes(file))
     .forEach((file) => {
       it(`should parse all DataElements of DICOM file "${fileSet}/${file}"`, () => {
-        const expectedTags = readJson(fileSet, file);
+        const expectedTags = readFileData(fileSet, file).tags;
         const dataView = readDataView(fileSet, file);
 
         const { dataSet } = parser.parse(dataView);
