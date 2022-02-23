@@ -43,10 +43,7 @@ function readDataElement(
   let offset = offsetStart;
 
   // read Tag
-  const tag = {
-    group: data.getUint16(offset, encoding.littleEndian),
-    element: data.getUint16(offset + 2, encoding.littleEndian),
-  };
+  const tag = getTag(data, offset, encoding.littleEndian);
   offset = offset + 4;
 
   // read VR
@@ -96,13 +93,34 @@ function readDataElement(
   }
 
   if (equalTag(tag, PixelDataTag)) {
-    value = { offset, length: data.byteLength - offset };
-    return [{ tag, vr, value }, data.byteLength];
+    // check if the last 8 bytes encode a Sequence Delimitation Tag
+    // instead of searching for it, since Pixel Data should be the last Data Element
+    const offsetEnd = data.byteLength - 8;
+    const tagEnd = getTag(data, offsetEnd, encoding.littleEndian);
+    if (equalTag(tagEnd, SequenceDelimitationItemTag)) {
+      value = { offset, length: offsetEnd - offset };
+      return [{ tag, vr, value }, data.byteLength];
+    }
   }
 
-  const [, offsetEnd] = readSequenceItems(data, offset, encoding);
-  value = { offset, length: offsetEnd - offset };
-  return [{ tag, vr, value }, offsetEnd];
+  if (vr === "SQ") {
+    const [, offsetEnd] = readSequenceItems(data, offset, encoding);
+    value = { offset, length: offsetEnd - offset };
+    return [{ tag, vr, value }, offsetEnd];
+  }
+
+  // TODO: Implement an efficient search algorithm.
+  const lengthOfDelimiter = 8; // includes the Delimination Tag and its 4 byte long "length value" of zero
+  let offsetEnd = offset;
+  while (offsetEnd <= data.byteLength - lengthOfDelimiter) {
+    const tagEnd = getTag(data, offsetEnd, encoding.littleEndian);
+    if (equalTag(tagEnd, SequenceDelimitationItemTag)) {
+      value = { offset, length: offsetEnd - offset };
+      return [{ tag, vr, value }, offsetEnd + lengthOfDelimiter];
+    }
+    offsetEnd += 1;
+  }
+  throw Error("Reached and of file searching for a Sequence Delimitation Tag");
 }
 
 export function readSequenceItems(
@@ -132,6 +150,20 @@ const VRs = [
 type VR = typeof VRs[number];
 const dataVR: VR[] = ["OB", "OW", "OF", "SQ", "UT", "UN"];
 
+/**
+ * Read a Tag from a DataView.
+ *
+ * @param data - The DataView to read from.
+ * @param offset - The offset to read at.
+ * @param littleEndian - True if byte order is little endian.
+ * @returns The Tag at offset.
+ */
+function getTag(data: DataView, offset: number, littleEndian: boolean): Tag {
+  return {
+    group: data.getUint16(offset, littleEndian),
+    element: data.getUint16(offset + 2, littleEndian),
+  };
+}
 /**
  * Read a VR from a DataView
  *
