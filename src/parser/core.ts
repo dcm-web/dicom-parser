@@ -120,7 +120,7 @@ function readDataElement(
     }
     offsetEnd += 1;
   }
-  throw Error("Reached and of file searching for a Sequence Delimitation Tag");
+  throw Error("Reached end of file searching for a Sequence Delimitation Tag");
 }
 
 export function readSequenceItems(
