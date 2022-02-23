@@ -1,6 +1,7 @@
 import json
 import os
 import pydicom
+import hashlib
 
 setname = 'pydicom'
 in_dir = os.path.join(os.path.dirname(__file__), '..', 'dicom-files', setname)
@@ -16,8 +17,10 @@ for filename in os.listdir(in_dir):
 
     tags = [tag_string(de) for de in ds.file_meta] + [tag_string(de) for de in ds]
     file_data = {
-        "tags": tags
+        "tags": tags,
+        "pixelDataHash": hashlib.sha1(ds.PixelData).hexdigest() if ds.get("PixelData") else None
     }
+    print(len(ds.PixelData) if ds.get("PixelData") else None)
 
 
     out_dir = os.path.join(os.path.dirname(__file__), setname)
