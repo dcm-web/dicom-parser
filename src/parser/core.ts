@@ -127,15 +127,21 @@ export function readSequenceItems(
   data: DataView,
   offsetStart: number,
   encoding: DataEncoding
-): [DataSet, number] {
-  const stopCondition = (tag: Tag) => {
-    const isSequenceEnd = equalTag(tag, SequenceDelimitationItemTag);
-    if (!isSequenceEnd && !equalTag(tag, ItemTag)) {
-      console.warn(`Expected ItemTag but found tag "${tagToString(tag)}".`);
+): [DataElement[], number] {
+  const elements: DataElement[] = [];
+  let offset = offsetStart;
+  while (offset < data.byteLength) {
+    const [element, offsetEnd] = readDataElement(data, offset, encoding);
+    offset = offsetEnd;
+    if (equalTag(element.tag, SequenceDelimitationItemTag)) break;
+    if (!equalTag(element.tag, ItemTag)) {
+      console.warn(
+        `Expected ItemTag but found tag "${tagToString(element.tag)}".`
+      );
     }
-    return isSequenceEnd ? "stopAndIncludeOffset" : "continue";
-  };
-  return readDataSet(data, offsetStart, encoding, stopCondition);
+    elements.push(element);
+  }
+  return [elements, offset];
 }
 
 // -- VR --
