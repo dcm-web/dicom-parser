@@ -139,5 +139,6 @@
     "(0028,9002)",
     "(2050,0020)"
   ],
-  "pixelDataHash": null
+  "pixelDataHash": null,
+  "pixelDecodedHash": null
 }

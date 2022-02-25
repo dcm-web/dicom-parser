@@ -41,5 +41,6 @@
     "(0028,3010)",
     "(7fe0,0010)"
   ],
-  "pixelDataHash": "f90fc6ad352179aa1856e0d21336744a678104fd"
+  "pixelDataHash": "f90fc6ad352179aa1856e0d21336744a678104fd",
+  "pixelDecodedHash": "f90fc6ad352179aa1856e0d21336744a678104fd"
 }

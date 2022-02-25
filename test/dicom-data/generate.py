@@ -3,6 +3,15 @@ import os
 import pydicom
 import hashlib
 
+
+def get_decoded_pixel(ds):
+    try:
+        return ds.pixel_array.tobytes()
+    except Exception:
+        print(f"failed to decode pixel data of {filename}")
+        return None
+
+
 setname = 'pydicom'
 in_dir = os.path.join(os.path.dirname(__file__), '..', 'dicom-files', setname)
 for filename in os.listdir(in_dir):
@@ -18,10 +27,9 @@ for filename in os.listdir(in_dir):
     tags = [tag_string(de) for de in ds.file_meta] + [tag_string(de) for de in ds]
     file_data = {
         "tags": tags,
-        "pixelDataHash": hashlib.sha1(ds.PixelData).hexdigest() if ds.get("PixelData") else None
+        "pixelDataHash": hashlib.sha1(ds.PixelData).hexdigest() if ds.get("PixelData") else None,
+        "pixelDecodedHash": hashlib.sha1(get_decoded_pixel(ds)).hexdigest() if get_decoded_pixel(ds) else None
     }
-    print(len(ds.PixelData) if ds.get("PixelData") else None)
-
 
     out_dir = os.path.join(os.path.dirname(__file__), setname)
     with open(os.path.join(out_dir, f'{filename}.json'), 'w') as outfile:
