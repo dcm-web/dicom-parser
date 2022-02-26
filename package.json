@@ -27,5 +27,11 @@
     "prettier": "2.5.1",
     "ts-node": "^10.5.0",
     "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@cwasm/jpeg-turbo": "^0.1.3",
+    "charls": "github:moritzmhmk/charls-js",
+    "jpeg-lossless-decoder-js": "^2.0.4",
+    "openjpeg": "github:moritzmhmk/openjpeg-js"
   }
 }

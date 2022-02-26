@@ -2,6 +2,8 @@ import { createHash } from "crypto";
 import * as fs from "fs";
 import * as parser from "../src/parser";
 import * as utils from "../src/parser/utils";
+import * as decoder from "../src/decoder";
+
 import { expect } from "chai";
 
 const dicomFilesDir = "./test/dicom-files";
@@ -30,6 +32,7 @@ function readDataView(fileSet: string, file: string) {
 type FileData = {
   tags: string[];
   pixelDataHash: string;
+  pixelDecodedHash: string;
 };
 function readFileData(fileSet: string, file: string): FileData {
   return JSON.parse(
@@ -78,10 +81,10 @@ fileSets.forEach((fileSet) => {
   fileSetFiles(fileSet)
     .filter((file) => !excludeFiles[fileSet]?.includes(file))
     .forEach((file) => {
-      it(`should parse pixel data value of DICOM file "${fileSet}/${file}"`, () => {
+      it(`should parse and decode pixel data of DICOM file "${fileSet}/${file}"`, async () => {
         const dataView = readDataView(fileSet, file);
-        const expectedPixelDataHash = readFileData(fileSet, file).pixelDataHash;
-        const { dataSet } = parser.parse(dataView);
+        const expected = readFileData(fileSet, file);
+        const { dataSet, transferSyntax } = parser.parse(dataView);
         const pixelDataElement = dataSet["(7fe0,0010)"];
 
         const pixelDataView = utils.dataViewAtLocation(
@@ -91,7 +94,26 @@ fileSets.forEach((fileSet) => {
         const pixelDataHash = createHash("sha1")
           .update(pixelDataView)
           .digest("hex");
-        expect(pixelDataHash).to.equal(expectedPixelDataHash);
+        expect(pixelDataHash, "parsed pixel data").to.equal(
+          expected.pixelDataHash
+        );
+
+        const decodeFn = decoder.pixelDecoderForTransferSyntax(
+          transferSyntax.uid
+        );
+        expect(decodeFn).to.be.not.null;
+        if (!decodeFn) return;
+
+        const decodedFrames = await decodeFn(pixelDataView, {
+          littleEndian: transferSyntax.byteOrdering === "Little Endian",
+          implicitVR: transferSyntax.implicitVR,
+        });
+
+        const decodedHash = createHash("sha1");
+        decodedFrames.forEach((frame) => decodedHash.update(frame));
+        expect(decodedHash.digest("hex"), "decoded pixel data").to.equal(
+          expected.pixelDecodedHash
+        );
       });
     });
 });
