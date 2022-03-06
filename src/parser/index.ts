@@ -31,9 +31,8 @@ export function parse(data: DataView): {
   if (transferSyntaxDataElement) {
     const dataLocation = transferSyntaxDataElement.value;
     const transferSyntaxDataView = utils.dataViewAtLocation(data, dataLocation);
-    const decoder = new TextDecoder("windows-1252");
     transferSyntaxUid = utils.stringTrimNull(
-      decoder.decode(transferSyntaxDataView)
+      utils.decodeString(transferSyntaxDataView)
     );
   } else {
     /** Default as defined in {@link https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_10.1 | DICOM Part 5 Section 10.1}. */
