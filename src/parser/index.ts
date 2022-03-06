@@ -1,6 +1,7 @@
 import { DataSet, readDataSet } from "./core";
 import { TransferSyntax, transferSyntaxFromUid } from "./transferSyntax";
 import * as utils from "./utils";
+export * as utils from "./utils";
 
 export function parse(data: DataView): {
   dataSet: DataSet;

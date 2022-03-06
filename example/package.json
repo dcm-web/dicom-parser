@@ -1,0 +1,12 @@
+{
+  "name": "dicom-parser-example",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "parcel index.html"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "parcel": "^2.3.2"
+  }
+}
