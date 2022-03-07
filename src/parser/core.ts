@@ -75,10 +75,10 @@ function readDataElement(
   }
 
   // read value
-  let value: DataLocation;
+  let value: DataView;
 
   if (length != 0xffffffff) {
-    value = { offset, length };
+    value = new DataView(data.buffer, data.byteOffset + offset, length);
     return [{ tag, vr, value }, offset + length];
   }
 
@@ -88,7 +88,11 @@ function readDataElement(
         ? "stopAndIncludeOffset"
         : "continue"
     );
-    value = { offset, length: offsetEnd - offset };
+    value = new DataView(
+      data.buffer,
+      data.byteOffset + offset,
+      offsetEnd - offset
+    );
     return [{ tag, vr, value }, offsetEnd];
   }
 
@@ -98,14 +102,22 @@ function readDataElement(
     const offsetEnd = data.byteLength - 8;
     const tagEnd = getTag(data, offsetEnd, encoding.littleEndian);
     if (equalTag(tagEnd, SequenceDelimitationItemTag)) {
-      value = { offset, length: offsetEnd - offset };
+      value = new DataView(
+        data.buffer,
+        data.byteOffset + offset,
+        offsetEnd - offset
+      );
       return [{ tag, vr, value }, data.byteLength];
     }
   }
 
   if (vr === "SQ") {
     const [, offsetEnd] = readSequenceItems(data, offset, encoding);
-    value = { offset, length: offsetEnd - offset };
+    value = new DataView(
+      data.buffer,
+      data.byteOffset + offset,
+      offsetEnd - offset
+    );
     return [{ tag, vr, value }, offsetEnd];
   }
 
@@ -115,7 +127,11 @@ function readDataElement(
   while (offsetEnd <= data.byteLength - lengthOfDelimiter) {
     const tagEnd = getTag(data, offsetEnd, encoding.littleEndian);
     if (equalTag(tagEnd, SequenceDelimitationItemTag)) {
-      value = { offset, length: offsetEnd - offset };
+      value = new DataView(
+        data.buffer,
+        data.byteOffset + offset,
+        offsetEnd - offset
+      );
       return [{ tag, vr, value }, offsetEnd + lengthOfDelimiter];
     }
     offsetEnd += 1;
@@ -214,9 +230,8 @@ export type DataSet = Record<string, DataElement>;
 export type DataElement = {
   tag: Tag;
   vr: string | null;
-  value: DataLocation;
+  value: DataView;
 };
-export type DataLocation = { offset: number; length: number };
 export type DataEncoding = {
   implicitVR: boolean;
   littleEndian: boolean;

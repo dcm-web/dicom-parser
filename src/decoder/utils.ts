@@ -1,11 +1,10 @@
 import { DataEncoding } from "./types";
 import { readSequenceItems } from "../parser/core";
-import { dataViewAtLocation } from "../parser/utils";
 const eoiMarker = 0xffd9;
 
 export function pixelDataToFragments(data: DataView, encoding: DataEncoding) {
   const [sequenceItems] = readSequenceItems(data, 0, encoding);
-  return sequenceItems.map((item) => dataViewAtLocation(data, item.value));
+  return sequenceItems.map((item) => item.value);
 }
 
 export function fragmentsToFrames(

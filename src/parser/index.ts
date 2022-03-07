@@ -29,10 +29,8 @@ export function parse(data: DataView): {
   let transferSyntaxUid;
   const transferSyntaxDataElement = meta["(0002,0010)"];
   if (transferSyntaxDataElement) {
-    const dataLocation = transferSyntaxDataElement.value;
-    const transferSyntaxDataView = utils.dataViewAtLocation(data, dataLocation);
     transferSyntaxUid = utils.stringTrimNull(
-      utils.decodeString(transferSyntaxDataView)
+      utils.decodeString(transferSyntaxDataElement.value)
     );
   } else {
     /** Default as defined in {@link https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_10.1 | DICOM Part 5 Section 10.1}. */

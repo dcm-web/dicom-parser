@@ -9,139 +9,97 @@ async function onload() {
   const { dataSet, transferSyntax } = parser.parse(dataView);
   console.log(dataSet, transferSyntax);
   const pixelDataElement = dataSet["(7fe0,0010)"];
-  const pixelDataView = parser.utils.dataViewAtLocation(
-    dataView,
-    pixelDataElement.value
-  );
   const decodeFn = decoder.pixelDecoderForTransferSyntax(transferSyntax.uid);
   if (decodeFn == null) {
     console.error("No decoder for image.");
     return;
   }
-  console.log(pixelDataView);
-  const decodedFrames = await decodeFn(pixelDataView, {
+  const decodedFrames = await decodeFn(pixelDataElement.value, {
     littleEndian: transferSyntax.byteOrdering === "Little Endian",
     implicitVR: transferSyntax.implicitVR,
   });
   console.log(decodedFrames);
 
-  const samplesPerPixel = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0002)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
+  const samplesPerPixel = dataSet["(0028,0002)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
   const photometricInterpretation = parser.utils
-    .decodeString(
-      parser.utils.dataViewAtLocation(dataView, dataSet["(0028,0004)"].value)
-    )
+    .decodeString(dataSet["(0028,0004)"].value)
     .trim();
 
-  const planarConfiguration = dataSet["(0028,0006)"]
-    ? parser.utils
-        .dataViewAtLocation(dataView, dataSet["(0028,0006)"].value)
-        .getUint16(0, transferSyntax.byteOrdering === "Little Endian")
-    : 0;
+  const planarConfiguration = dataSet["(0028,0006)"]?.value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const bitsAllocated = dataSet["(0028,0100)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const bitsStored = dataSet["(0028,0101)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const pixelRepresentation = dataSet["(0028,0103)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const smallestValue = dataSet["(0028,0106)"]?.value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const largestValue = dataSet["(0028,0107)"]?.value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
 
-  const bitsAllocated = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0100)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
-  const bitsStored = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0101)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
-  const pixelRepresentation = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0103)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
-  const smallestValue = dataSet["(0028,0106)"]
-    ? parser.utils
-        .dataViewAtLocation(dataView, dataSet["(0028,0106)"].value)
-        .getUint16(0, transferSyntax.byteOrdering === "Little Endian")
-    : null;
-  const largestValue = dataSet["(0028,0107)"]
-    ? parser.utils
-        .dataViewAtLocation(dataView, dataSet["(0028,0107)"].value)
-        .getUint16(0, transferSyntax.byteOrdering === "Little Endian")
-    : null;
-
-  const windowCenter = dataSet["(0028,1050)"]
-    ? parseFloat(
-        parser.utils.decodeString(
-          parser.utils.dataViewAtLocation(
-            dataView,
-            dataSet["(0028,1050)"].value
-          )
-        )
-      )
-    : null;
-  const windowWidth = dataSet["(0028,1051)"]
-    ? parseFloat(
-        parser.utils.decodeString(
-          parser.utils.dataViewAtLocation(
-            dataView,
-            dataSet["(0028,1051)"].value
-          )
-        )
-      )
-    : null;
-
-  const rescaleIntercept = dataSet["(0028,1052)"]
-    ? parseFloat(
-        parser.utils.decodeString(
-          parser.utils.dataViewAtLocation(
-            dataView,
-            dataSet["(0028,1052)"].value
-          )
-        )
-      )
-    : null;
-  const rescaleSlope = dataSet["(0028,1053)"]
-    ? parseFloat(
-        parser.utils.decodeString(
-          parser.utils.dataViewAtLocation(
-            dataView,
-            dataSet["(0028,1053)"].value
-          )
-        )
-      )
-    : null;
-
-  const redPaletteColorLookupTableDescriptor = dataSet["(0028,1101)"]
-    ? getPaletteColorLookupTableDescriptor(
-        parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1101)"].value),
-        transferSyntax
-      )
-    : null;
-  const greenPaletteColorLookupTableDescriptor = dataSet["(0028,1102)"]
-    ? getPaletteColorLookupTableDescriptor(
-        parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1102)"].value),
-        transferSyntax
-      )
-    : null;
-  const bluePaletteColorLookupTableDescriptor = dataSet["(0028,1103)"]
-    ? getPaletteColorLookupTableDescriptor(
-        parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1103)"].value),
-        transferSyntax
-      )
-    : null;
-
+  const windowCenter =
+    dataSet["(0028,1050)"] &&
+    parseFloat(parser.utils.decodeString(dataSet["(0028,1050)"].value));
+  const windowWidth =
+    dataSet["(0028,1051)"] &&
+    parseFloat(parser.utils.decodeString(dataSet["(0028,1051)"].value));
+  const rescaleIntercept =
+    dataSet["(0028,1052)"] &&
+    parseFloat(parser.utils.decodeString(dataSet["(0028,1052)"].value));
+  const rescaleSlope =
+    dataSet["(0028,1053)"] &&
+    parseFloat(parser.utils.decodeString(dataSet["(0028,1053)"].value));
+  const redPaletteColorLookupTableDescriptor =
+    dataSet["(0028,1101)"] &&
+    getPaletteColorLookupTableDescriptor(
+      dataSet["(0028,1101)"].value,
+      transferSyntax
+    );
+  const greenPaletteColorLookupTableDescriptor =
+    dataSet["(0028,1102)"] &&
+    getPaletteColorLookupTableDescriptor(
+      dataSet["(0028,1102)"].value,
+      transferSyntax
+    );
+  const bluePaletteColorLookupTableDescriptor =
+    dataSet["(0028,1103)"] &&
+    getPaletteColorLookupTableDescriptor(
+      dataSet["(0028,1103)"].value,
+      transferSyntax
+    );
   console.log(
     "Red Palette Color Lookup Table Descriptor",
     redPaletteColorLookupTableDescriptor
   );
 
-  const redPaletteColorLookupTableData = dataSet["(0028,1201)"]
-    ? parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1201)"].value)
-    : null;
-  const greenPaletteColorLookupTableData = dataSet["(0028,1202)"]
-    ? parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1202)"].value)
-    : null;
-  const bluePaletteColorLookupTableData = dataSet["(0028,1203)"]
-    ? parser.utils.dataViewAtLocation(dataView, dataSet["(0028,1203)"].value)
-    : null;
+  const redPaletteColorLookupTableData = dataSet["(0028,1201)"].value;
+  const greenPaletteColorLookupTableData = dataSet["(0028,1202)"].value;
+  const bluePaletteColorLookupTableData = dataSet["(0028,1203)"].value;
 
-  const rows = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0010)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
-  const columns = parser.utils
-    .dataViewAtLocation(dataView, dataSet["(0028,0011)"].value)
-    .getUint16(0, transferSyntax.byteOrdering === "Little Endian");
+  const rows = dataSet["(0028,0010)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
+  const columns = dataSet["(0028,0011)"].value.getUint16(
+    0,
+    transferSyntax.byteOrdering === "Little Endian"
+  );
   console.log(samplesPerPixel, photometricInterpretation);
   console.log(planarConfiguration);
   console.log(bitsAllocated, bitsStored);

@@ -12,15 +12,15 @@ export function render(
     bitsStored: number;
     pixelRepresentation: number;
     photometricInterpretation: string;
-    windowWidth: number;
-    windowCenter: number;
-    rescaleIntercept: number | null;
-    rescaleSlope: number | null;
-    smallestValue: number | null;
-    largestValue: number | null;
-    redPaletteColorLookupTableDescriptor: [number, number, number] | null;
-    greenPaletteColorLookupTableDescriptor: [number, number, number] | null;
-    bluePaletteColorLookupTableDescriptor: [number, number, number] | null;
+    windowWidth?: number;
+    windowCenter?: number;
+    rescaleIntercept?: number;
+    rescaleSlope?: number;
+    smallestValue?: number;
+    largestValue?: number;
+    redPaletteColorLookupTableDescriptor?: [number, number, number];
+    greenPaletteColorLookupTableDescriptor?: [number, number, number];
+    bluePaletteColorLookupTableDescriptor?: [number, number, number];
     redPaletteColorLookupTableData: DataView;
     greenPaletteColorLookupTableData: DataView;
     bluePaletteColorLookupTableData: DataView;
@@ -95,9 +95,9 @@ function pixelToTypedArray(
 // https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.11.html#sect_C.11.1
 function applyModalityLut(
   data: TypedArray,
-  info: { rescaleIntercept: number | null; rescaleSlope: number | null }
+  info: { rescaleIntercept?: number; rescaleSlope?: number }
 ): TypedArray {
-  if (info.rescaleIntercept === null || info.rescaleSlope === null) {
+  if (info.rescaleIntercept === undefined || info.rescaleSlope === undefined) {
     return data;
   }
   // applying the modality lut transformation might exceed the type of "data".
@@ -113,16 +113,16 @@ function applyModalityLut(
 }
 
 function getWindow(info: {
-  windowWidth: number | null;
-  windowCenter: number | null;
-  smallestValue: number | null;
-  largestValue: number | null;
+  windowWidth?: number;
+  windowCenter?: number;
+  smallestValue?: number;
+  largestValue?: number;
   bitsStored: number;
 }) {
-  if (info.windowWidth !== null && info.windowCenter !== null) {
+  if (info.windowWidth !== undefined && info.windowCenter !== undefined) {
     return { width: info.windowWidth, center: info.windowCenter };
   }
-  if (info.smallestValue !== null && info.largestValue !== null) {
+  if (info.smallestValue !== undefined && info.largestValue !== undefined) {
     const width = info.largestValue - info.smallestValue;
     return { width, center: width / 2 };
   }

@@ -8,12 +8,12 @@ export function toRGBA(
     samplesPerPixel: number;
     photometricInterpretation: string;
     planarConfiguration: number;
-    redPaletteColorLookupTableDescriptor: [number, number, number] | null;
-    greenPaletteColorLookupTableDescriptor: [number, number, number] | null;
-    bluePaletteColorLookupTableDescriptor: [number, number, number] | null;
-    redPaletteColorLookupTableData: DataView;
-    greenPaletteColorLookupTableData: DataView;
-    bluePaletteColorLookupTableData: DataView;
+    redPaletteColorLookupTableDescriptor?: [number, number, number];
+    greenPaletteColorLookupTableDescriptor?: [number, number, number];
+    bluePaletteColorLookupTableDescriptor?: [number, number, number];
+    redPaletteColorLookupTableData?: DataView;
+    greenPaletteColorLookupTableData?: DataView;
+    bluePaletteColorLookupTableData?: DataView;
   }
 ): Uint8ClampedArray {
   const rgba = new Uint8ClampedArray(info.columns * info.rows * 4);
@@ -35,7 +35,10 @@ export function toRGBA(
           b = r;
         } else if (
           info.photometricInterpretation === "PALETTE COLOR" &&
-          info.redPaletteColorLookupTableDescriptor
+          info.redPaletteColorLookupTableDescriptor &&
+          info.redPaletteColorLookupTableData &&
+          info.greenPaletteColorLookupTableData &&
+          info.bluePaletteColorLookupTableData
         ) {
           const numberOfEntries = info.redPaletteColorLookupTableDescriptor[0];
           const firstInputValueMapped =
