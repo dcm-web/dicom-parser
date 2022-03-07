@@ -1,9 +1,11 @@
 import { toRGBA } from "./utils";
 import { TypedArray } from "../decoder/types"; // move to top level file
+import { ByteOrdering } from "../parser/transferSyntax";
 
 export function render(
   frame: Uint8Array,
   info: {
+    byteOrdering: ByteOrdering;
     samplesPerPixel: number;
     planarConfiguration: number;
     columns: number;
@@ -47,7 +49,11 @@ enum PixelRepresentation {
 }
 function pixelToTypedArray(
   data: Uint8Array,
-  info: { bitsAllocated: number; pixelRepresentation: number }
+  info: {
+    byteOrdering: ByteOrdering;
+    bitsAllocated: number;
+    pixelRepresentation: number;
+  }
 ): TypedArray {
   if (info.bitsAllocated === 1) {
     const out = new Uint8Array(data.byteLength * 8);
@@ -64,6 +70,11 @@ function pixelToTypedArray(
     data = new Uint8Array(
       data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
     );
+  }
+
+  const nativeByteOrdering = getNativeByteOrdering();
+  if (info.byteOrdering !== nativeByteOrdering) {
+    data = swapBytes(data, bytesAllocated);
   }
 
   if (info.bitsAllocated === 8) {
@@ -152,5 +163,24 @@ function applyWindow(
     out[i] = y;
   }
 
+  return out;
+}
+
+function getNativeByteOrdering(): ByteOrdering {
+  const arrayBuffer = new ArrayBuffer(2);
+  const uint8Array = new Uint8Array(arrayBuffer);
+  const uint16array = new Uint16Array(arrayBuffer);
+  uint8Array[0] = 0xaa;
+  uint8Array[1] = 0xbb;
+  if (uint16array[0] === 0xbbaa) return "Little Endian";
+  return "Big Endian";
+}
+
+function swapBytes(data: Uint8Array, bytes: number): Uint8Array {
+  const out = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    const byte = i % bytes;
+    out[i] = data[i + bytes - byte - byte - 1];
+  }
   return out;
 }

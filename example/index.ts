@@ -107,16 +107,8 @@ async function onload() {
   console.log(smallestValue, largestValue);
   console.log(rows, columns);
 
-  const arrayBuffer = new ArrayBuffer(2);
-  const uint8Array = new Uint8Array(arrayBuffer);
-  const uint16array = new Uint16Array(arrayBuffer);
-  uint8Array[0] = 0xaa; // set first byte
-  uint8Array[1] = 0xbb; // set second byte
-  if (uint16array[0] === 0xbbaa) console.log("little endian");
-  if (uint16array[0] === 0xaabb) console.log("big endian");
-  console.log(transferSyntax.byteOrdering);
-
   const imageData = renderer.render(decodedFrames[0], {
+    byteOrdering: transferSyntax.byteOrdering,
     samplesPerPixel,
     planarConfiguration,
     columns,
