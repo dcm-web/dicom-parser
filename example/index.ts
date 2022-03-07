@@ -88,9 +88,9 @@ async function onload() {
     redPaletteColorLookupTableDescriptor
   );
 
-  const redPaletteColorLookupTableData = dataSet["(0028,1201)"].value;
-  const greenPaletteColorLookupTableData = dataSet["(0028,1202)"].value;
-  const bluePaletteColorLookupTableData = dataSet["(0028,1203)"].value;
+  const redPaletteColorLookupTableData = dataSet["(0028,1201)"]?.value;
+  const greenPaletteColorLookupTableData = dataSet["(0028,1202)"]?.value;
+  const bluePaletteColorLookupTableData = dataSet["(0028,1203)"]?.value;
 
   const rows = dataSet["(0028,0010)"].value.getUint16(
     0,
