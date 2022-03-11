@@ -5,7 +5,6 @@ import {
   getFrames,
 } from "../src/index";
 import dicomUrl from "url:../test/dicom-files/pydicom/color3d_jpeg_baseline.dcm";
-import { TransferSyntax } from "../src/parser/transferSyntax";
 
 async function onload() {
   const r = await fetch(dicomUrl);
