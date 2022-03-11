@@ -1,5 +1,4 @@
-import { toRGBA } from "./utils";
-import { TypedArray } from "../decoder/types"; // move to top level file
+import { TypedArray, toRGBA } from "./utils";
 import { ByteOrdering } from "../parser/transferSyntax";
 
 export function render(
