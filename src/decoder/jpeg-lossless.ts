@@ -9,9 +9,19 @@ const decode: PixelDataDecoder = async function decode(data, encoding) {
 };
 
 const decodeFrame: FrameDecoder = async function (data) {
-  return Promise.resolve(
-    new lossless.Decoder().decode(data.buffer, data.byteOffset, data.byteLength)
+  let decoded = new lossless.Decoder().decode(
+    data.buffer,
+    data.byteOffset,
+    data.byteLength
   );
+  if (decoded.BYTES_PER_ELEMENT === 2) {
+    decoded = new Uint8Array(
+      decoded.buffer,
+      decoded.byteOffset,
+      decoded.byteLength
+    );
+  }
+  return Promise.resolve(decoded as Uint8Array);
 };
 
 export default decode;
