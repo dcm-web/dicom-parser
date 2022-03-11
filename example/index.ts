@@ -4,13 +4,8 @@ import {
   getImagePixelDescription,
   getFrames,
 } from "../src/index";
-import dicomUrl from "url:../test/dicom-files/pydicom/color3d_jpeg_baseline.dcm";
 
-async function onload() {
-  const r = await fetch(dicomUrl);
-  const buffer = await r.arrayBuffer();
-
-  const dataView = new DataView(buffer, 0, buffer.byteLength);
+async function render(dataView: DataView) {
   const { dataSet, transferSyntax } = parser.parse(dataView);
   const decodedFrames = await getFrames(dataSet, transferSyntax);
   const imagePixelDescription = getImagePixelDescription(
@@ -24,11 +19,10 @@ async function onload() {
   );
 
   // put the imageData on screen...
-  const canvas = document.createElement("canvas");
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  if (!canvas) return;
   canvas.width = imageData.width;
   canvas.height = imageData.height;
-  canvas.setAttribute("style", "border: 1px solid #f0f;");
-  document.body.appendChild(canvas);
   const context = canvas.getContext("2d");
   if (context == null) {
     console.error("Failed to create canvas 2d context.");
@@ -37,4 +31,24 @@ async function onload() {
   context.putImageData(imageData, 0, 0);
 }
 
-void onload();
+function handleDrop(e: DragEvent): void {
+  console.log("File(s) dropped");
+  e.preventDefault();
+  let file;
+  if (e.dataTransfer?.items) {
+    file = e.dataTransfer.items[0].getAsFile();
+  } else if (e.dataTransfer?.files) {
+    file = e.dataTransfer.files[0];
+  }
+  if (file) {
+    const fileReader = new FileReader();
+    fileReader.addEventListener("load", () => {
+      const dataView = new DataView(fileReader.result as ArrayBuffer, 0);
+      void render(dataView);
+    });
+    fileReader.readAsArrayBuffer(file);
+  }
+}
+const dz = document.getElementById("drop_zone");
+dz?.addEventListener("drop", handleDrop);
+dz?.addEventListener("dragover", (e) => e.preventDefault());
