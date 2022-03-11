@@ -1,4 +1,5 @@
 import { DataSet, readDataSet } from "./core";
+export { DataSet } from "./core";
 import { TransferSyntax, transferSyntaxFromUid } from "./transferSyntax";
 import * as utils from "./utils";
 export * as utils from "./utils";

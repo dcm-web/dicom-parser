@@ -4,8 +4,8 @@ import { ByteOrdering } from "../parser/transferSyntax";
 
 export function render(
   frame: Uint8Array,
+  byteOrdering: ByteOrdering,
   info: {
-    byteOrdering: ByteOrdering;
     samplesPerPixel: number;
     planarConfiguration: number;
     columns: number;
@@ -30,7 +30,7 @@ export function render(
 ): ImageData {
   console.log(info);
   console.log("frame", frame);
-  const typedPixelData = pixelToTypedArray(frame, info);
+  const typedPixelData = pixelToTypedArray(frame, byteOrdering, info);
   console.log("typed", typedPixelData);
   const typedPixelDataWithModLut = applyModalityLut(typedPixelData, info);
   console.log("modality LUT", typedPixelDataWithModLut);
@@ -49,8 +49,8 @@ enum PixelRepresentation {
 }
 function pixelToTypedArray(
   data: Uint8Array,
+  byteOrdering: ByteOrdering,
   info: {
-    byteOrdering: ByteOrdering;
     bitsAllocated: number;
     pixelRepresentation: number;
   }
@@ -73,7 +73,7 @@ function pixelToTypedArray(
   }
 
   const nativeByteOrdering = getNativeByteOrdering();
-  if (info.byteOrdering !== nativeByteOrdering) {
+  if (byteOrdering !== nativeByteOrdering) {
     data = swapBytes(data, bytesAllocated);
   }
 
