@@ -63,3 +63,15 @@ export function concatUint8Array(arrays: Uint8Array[]): Uint8Array {
   }
   return out;
 }
+
+export function interleaveUint8Array(arrays: Uint8Array[]): Uint8Array {
+  const outLength = arrays.reduce((total, array) => total + array.length, 0);
+  const out = new Uint8Array(outLength);
+  console.log(arrays[0]?.length, arrays[1]?.length);
+  for (let i = 0; i < outLength; i += 1) {
+    const arr = arrays[i % arrays.length];
+    const j = ~~(i / arrays.length);
+    out[i] = arr[j];
+  }
+  return out;
+}

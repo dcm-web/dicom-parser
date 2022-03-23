@@ -1,4 +1,4 @@
-import { concatUint8Array } from "./utils";
+import { interleaveUint8Array } from "./utils";
 import { FrameDecoder, PixelDataDecoder } from "./types";
 import { pixelDataToFragments } from "./utils";
 
@@ -16,7 +16,7 @@ const decodeFrame: FrameDecoder = async function (data) {
     return decodeSegment(buffer, start, end);
   });
 
-  return Promise.resolve(concatUint8Array(segments));
+  return Promise.resolve(interleaveUint8Array(segments));
 };
 
 /**
@@ -24,9 +24,9 @@ const decodeFrame: FrameDecoder = async function (data) {
  * @param data - The DataView to read from.
  */
 function decodeHeader(data: DataView): number[] {
-  const numberOfSegments = data.getInt32(0, true);
+  const numberOfSegments = data.getUint32(0, true);
   return [...new Array(numberOfSegments).keys()].map((i) =>
-    data.getInt32((i + 1) * 4, true)
+    data.getUint32((i + 1) * 4, true)
   );
 }
 
@@ -58,7 +58,8 @@ function decodeSegment(data: Int8Array, start: number, end: number) {
       continue; // -128
     }
   }
-  return dataOut.subarray(0, offsetOut);
+  const trim = Math.max(0, offset - end);
+  return dataOut.subarray(0, offsetOut - trim);
 }
 
 export default decode;
