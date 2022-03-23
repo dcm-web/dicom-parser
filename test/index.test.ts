@@ -87,12 +87,8 @@ fileSets.forEach((fileSet) => {
         const { dataSet, transferSyntax } = parser.parse(dataView);
         const pixelDataElement = dataSet["(7fe0,0010)"];
 
-        const pixelDataView = utils.dataViewAtLocation(
-          dataView,
-          pixelDataElement.value
-        );
         const pixelDataHash = createHash("sha1")
-          .update(pixelDataView)
+          .update(pixelDataElement.value)
           .digest("hex");
         expect(pixelDataHash, "parsed pixel data").to.equal(
           expected.pixelDataHash
@@ -104,7 +100,7 @@ fileSets.forEach((fileSet) => {
         expect(decodeFn).to.be.not.null;
         if (!decodeFn) return;
 
-        const decodedFrames = await decodeFn(pixelDataView, {
+        const decodedFrames = await decodeFn(pixelDataElement.value, {
           littleEndian: transferSyntax.byteOrdering === "Little Endian",
           implicitVR: transferSyntax.implicitVR,
         });
