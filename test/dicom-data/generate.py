@@ -6,7 +6,11 @@ import hashlib
 
 def get_decoded_pixel(ds):
     try:
-        return ds.pixel_array.tobytes()
+        arr = ds.pixel_array
+        if ds.file_meta.TransferSyntaxUID == "1.2.840.10008.1.2.4.50":  # JPEG baseline
+            print("changed color space for jpeg image")
+            arr = pydicom.pixel_data_handlers.util.convert_color_space(arr, ds.PhotometricInterpretation, "RGB")
+        return arr.tobytes()
     except Exception:
         print(f"failed to decode pixel data of {filename}")
         return None
