@@ -1,9 +1,8 @@
 import { createHash } from "crypto";
 import * as fs from "fs";
 import * as parser from "../src/parser";
-import * as utils from "../src/parser/utils";
 import * as decoder from "../src/decoder";
-
+import { getImagePixelDescription } from "../src";
 import { expect } from "chai";
 
 const dicomFilesDir = "./test/dicom-files";
@@ -100,13 +99,17 @@ fileSets.forEach((fileSet) => {
         expect(decodeFn).to.be.not.null;
         if (!decodeFn) return;
 
-        const decodedFrames = await decodeFn(pixelDataElement.value, {
-          littleEndian: transferSyntax.byteOrdering === "Little Endian",
-          implicitVR: transferSyntax.implicitVR,
-        });
+        const decoded = await decodeFn(
+          pixelDataElement.value,
+          {
+            littleEndian: transferSyntax.byteOrdering === "Little Endian",
+            implicitVR: transferSyntax.implicitVR,
+          },
+          getImagePixelDescription(dataSet, transferSyntax.byteOrdering)
+        );
 
         const decodedHash = createHash("sha1");
-        decodedFrames.forEach((frame) => decodedHash.update(frame));
+        decoded.frames.forEach((frame) => decodedHash.update(frame));
         expect(decodedHash.digest("hex"), "decoded pixel data").to.equal(
           expected.pixelDecodedHash
         );
