@@ -19,7 +19,19 @@ const decode: PixelDataDecoder = async function (
   for (const encodedFrame of encodedFrames) {
     frames.push(await decodeFrame(encodedFrame));
   }
-  return { frames, pixelDescription };
+  return {
+    frames,
+    pixelDescription: {
+      ...pixelDescription,
+      // JPEGs (mostly) use YBR_FULL_422 internally but when decoded with
+      // libjpeg-turbo the conversion to rgb is also performed, so the
+      // photometric interpretation needs to be updated.
+      photometricInterpretation:
+        pixelDescription.samplesPerPixel === 3
+          ? "RGB"
+          : pixelDescription.photometricInterpretation,
+    },
+  };
 };
 
 const decodeFrame = async function (data: DataView) {
