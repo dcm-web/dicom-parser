@@ -16,7 +16,7 @@ export function toRGBA(
     rows: number;
     samplesPerPixel: number;
     photometricInterpretation: string;
-    planarConfiguration: number;
+    planarConfiguration?: number;
     redPaletteColorLookupTableDescriptor?: [number, number, number];
     greenPaletteColorLookupTableDescriptor?: [number, number, number];
     bluePaletteColorLookupTableDescriptor?: [number, number, number];

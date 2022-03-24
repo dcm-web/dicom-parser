@@ -1,45 +1,37 @@
 import { TypedArray, toRGBA } from "./utils";
-import { ByteOrdering } from "../parser/transferSyntax";
+import {
+  ByteOrdering,
+  ImagePixelDescription,
+  ImagePixelTransformation,
+} from "../types";
 
 export function render(
   frame: Uint8Array,
   byteOrdering: ByteOrdering,
-  info: {
-    samplesPerPixel: number;
-    planarConfiguration: number;
-    columns: number;
-    rows: number;
-    bitsAllocated: number;
-    bitsStored: number;
-    pixelRepresentation: number;
-    photometricInterpretation: string;
-    windowWidth?: number;
-    windowCenter?: number;
-    rescaleIntercept?: number;
-    rescaleSlope?: number;
-    smallestValue?: number;
-    largestValue?: number;
-    redPaletteColorLookupTableDescriptor?: [number, number, number];
-    greenPaletteColorLookupTableDescriptor?: [number, number, number];
-    bluePaletteColorLookupTableDescriptor?: [number, number, number];
-    redPaletteColorLookupTableData: DataView;
-    greenPaletteColorLookupTableData: DataView;
-    bluePaletteColorLookupTableData: DataView;
-  }
+  pixelDescription: ImagePixelDescription,
+  pixelTransformation: ImagePixelTransformation
 ): ImageData {
-  console.log(info);
+  console.log(pixelDescription);
+  console.log(pixelTransformation);
   console.log("frame", frame);
-  const typedPixelData = pixelToTypedArray(frame, byteOrdering, info);
+  const typedPixelData = pixelToTypedArray(
+    frame,
+    byteOrdering,
+    pixelDescription
+  );
   console.log("typed", typedPixelData);
-  const typedPixelDataWithModLut = applyModalityLut(typedPixelData, info);
+  const typedPixelDataWithModLut = applyModalityLut(
+    typedPixelData,
+    pixelTransformation
+  );
   console.log("modality LUT", typedPixelDataWithModLut);
-  const window = getWindow(info);
+  const window = getWindow(pixelTransformation, pixelDescription);
   console.log("window", window);
   const arr = applyWindow(typedPixelDataWithModLut, window);
   console.log("window applied", arr);
 
-  const rgba = toRGBA(arr, info);
-  return new ImageData(rgba, info.columns, info.rows);
+  const rgba = toRGBA(arr, pixelDescription);
+  return new ImageData(rgba, pixelDescription.columns, pixelDescription.rows);
 }
 
 enum PixelRepresentation {
@@ -122,15 +114,22 @@ function applyModalityLut(
   return out;
 }
 
-function getWindow(info: {
-  windowWidth?: number;
-  windowCenter?: number;
-  smallestValue?: number;
-  largestValue?: number;
-  bitsStored: number;
-}) {
-  if (info.windowWidth !== undefined && info.windowCenter !== undefined) {
-    return { width: info.windowWidth, center: info.windowCenter };
+function getWindow(
+  {
+    windowWidth,
+    windowCenter,
+  }: {
+    windowWidth?: number;
+    windowCenter?: number;
+  },
+  info: {
+    smallestValue?: number;
+    largestValue?: number;
+    bitsStored: number;
+  }
+) {
+  if (windowWidth !== undefined && windowCenter !== undefined) {
+    return { width: windowWidth, center: windowCenter };
   }
   if (info.smallestValue !== undefined && info.largestValue !== undefined) {
     const width = info.largestValue - info.smallestValue;

@@ -4,7 +4,12 @@ import * as decoder from "./decoder";
 export * as decoder from "./decoder";
 export * as renderer from "./renderer";
 
-import { ByteOrdering, TransferSyntax } from "./parser/transferSyntax";
+import {
+  ByteOrdering,
+  ImagePixelDescription,
+  ImagePixelTransformation,
+} from "./types";
+import { TransferSyntax } from "./parser/transferSyntax";
 
 export async function getFrames(
   dataSet: parser.DataSet,
@@ -25,17 +30,11 @@ export async function getFrames(
 export function getImagePixelDescription(
   dataSet: parser.DataSet,
   byteOrdering: ByteOrdering
-) {
+): ImagePixelDescription {
   // read unsinged short (US)
   function readUS(tag: string): number | undefined {
     if (!dataSet[tag]) return;
     return dataSet[tag].value.getUint16(0, byteOrdering === "Little Endian");
-  }
-
-  // read decimal string (DS)
-  function readDS(tag: string): number | undefined {
-    if (!dataSet[tag]) return;
-    return parseFloat(parser.utils.decodeString(dataSet[tag].value));
   }
 
   function readPaletteColorLookupTableDescriptor(
@@ -52,23 +51,23 @@ export function getImagePixelDescription(
   }
 
   return {
-    samplesPerPixel: readUS("(0028,0002)"),
+    samplesPerPixel: readUS("(0028,0002)") || 1, // TODO: throw Error when tag nor present?
     photometricInterpretation: parser.utils
       .decodeString(dataSet["(0028,0004)"].value)
       .trim(),
-    planarConfiguration: readUS("(0028,0006)"),
-    rows: readUS("(0028,0010)"),
-    columns: readUS("(0028,0011)"),
 
-    bitsAllocated: readUS("(0028,0100)"),
-    bitsStored: readUS("(0028,0101)"),
-    pixelRepresentation: readUS("(0028,0103)"),
+    rows: readUS("(0028,0010)") || 1, // TODO: throw Error when tag nor present?
+    columns: readUS("(0028,0011)") || 1, // TODO: throw Error when tag nor present?
+
+    bitsAllocated: readUS("(0028,0100)") || 8, // TODO: throw Error when tag nor present?
+    bitsStored: readUS("(0028,0101)") || 8, // TODO: throw Error when tag nor present?
+
+    pixelRepresentation: readUS("(0028,0103)") || 0, // TODO: throw Error when tag nor present?
+    planarConfiguration: readUS("(0028,0006)"),
+
     smallestValue: readUS("(0028,0106)"),
     largestValue: readUS("(0028,0107)"),
-    windowCenter: readDS("(0028,1050)"),
-    windowWidth: readDS("(0028,1051)"),
-    rescaleIntercept: readDS("(0028,1052)"),
-    rescaleSlope: readDS("(0028,1053)"),
+
     redPaletteColorLookupTableDescriptor:
       readPaletteColorLookupTableDescriptor("(0028,1101)"),
     greenPaletteColorLookupTableDescriptor:
@@ -78,5 +77,22 @@ export function getImagePixelDescription(
     redPaletteColorLookupTableData: dataSet["(0028,1201)"]?.value,
     greenPaletteColorLookupTableData: dataSet["(0028,1202)"]?.value,
     bluePaletteColorLookupTableData: dataSet["(0028,1203)"]?.value,
+  };
+}
+
+export function getImagePixelTransformation(
+  dataSet: parser.DataSet
+): ImagePixelTransformation {
+  // read decimal string (DS)
+  function readDS(tag: string): number | undefined {
+    if (!dataSet[tag]) return;
+    return parseFloat(parser.utils.decodeString(dataSet[tag].value));
+  }
+
+  return {
+    windowCenter: readDS("(0028,1050)"),
+    windowWidth: readDS("(0028,1051)"),
+    rescaleIntercept: readDS("(0028,1052)"),
+    rescaleSlope: readDS("(0028,1053)"),
   };
 }

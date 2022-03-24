@@ -2,20 +2,24 @@ import {
   parser,
   renderer,
   getImagePixelDescription,
+  getImagePixelTransformation,
   getFrames,
 } from "../src/index";
 
 async function render(dataView: DataView) {
   const { dataSet, transferSyntax } = parser.parse(dataView);
   const decodedFrames = await getFrames(dataSet, transferSyntax);
-  const imagePixelDescription = getImagePixelDescription(
+  const pixelDescription = getImagePixelDescription(
     dataSet,
     transferSyntax.byteOrdering
   );
+  const pixelTransformation = getImagePixelTransformation(dataSet);
+
   const imageData = renderer.render(
     decodedFrames[0],
     transferSyntax.byteOrdering,
-    imagePixelDescription
+    pixelDescription,
+    pixelTransformation
   );
 
   // put the imageData on screen...

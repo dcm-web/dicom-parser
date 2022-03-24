@@ -1,3 +1,5 @@
+import { ByteOrdering } from "../types";
+
 /**
  * A Transfer Syntax is a set of encoding rules as defined in {@link https://dicom.nema.org/medical/dicom/current/output/html/part05.html#chapter_10 | Dicom Part 5 Section 10}.
  */
@@ -7,11 +9,6 @@ export type TransferSyntax = {
   implicitVR: boolean;
   deflated: boolean;
 };
-
-/**
- * Byte ordering as defined in {https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_7.3 | Dicom Part 5 Section 7.3}.
- */
-export type ByteOrdering = "Little Endian" | "Big Endian";
 
 /**
  * Get the Transfer Syntax for a UID.
