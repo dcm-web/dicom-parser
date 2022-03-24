@@ -2,10 +2,15 @@ import CharLS from "charls";
 import { FrameDecoder, PixelDataDecoder } from "./types";
 import { pixelDataToFragments, fragmentsToFrames } from "./utils";
 
-const decode: PixelDataDecoder = async function (data, encoding) {
+const decode: PixelDataDecoder = async function (
+  data,
+  encoding,
+  pixelDescription
+) {
   const fragments = pixelDataToFragments(data, encoding);
-  const frames = fragmentsToFrames(fragments);
-  return Promise.all(frames.map(decodeFrame));
+  const encodedFrames = fragmentsToFrames(fragments);
+  const frames = await Promise.all(encodedFrames.map(decodeFrame));
+  return { frames, pixelDescription };
 };
 
 const decodeFrame: FrameDecoder = async function (data) {

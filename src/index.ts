@@ -18,13 +18,20 @@ export async function getFrames(
   const pixelDataElement = dataSet["(7fe0,0010)"];
   const decodeFn = decoder.pixelDecoderForTransferSyntax(transferSyntax.uid);
   if (decodeFn == null) {
-    console.error("No decoder for image.");
-    return [];
+    throw Error("No decoder for image.");
   }
-  return decodeFn(pixelDataElement.value, {
-    littleEndian: transferSyntax.byteOrdering === "Little Endian",
-    implicitVR: transferSyntax.implicitVR,
-  });
+  const pixelDescription = getImagePixelDescription(
+    dataSet,
+    transferSyntax.byteOrdering
+  );
+  return decodeFn(
+    pixelDataElement.value,
+    {
+      littleEndian: transferSyntax.byteOrdering === "Little Endian",
+      implicitVR: transferSyntax.implicitVR,
+    },
+    pixelDescription
+  );
 }
 
 export function getImagePixelDescription(

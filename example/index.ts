@@ -8,17 +8,14 @@ import {
 
 async function render(dataView: DataView) {
   const { dataSet, transferSyntax } = parser.parse(dataView);
-  const decodedFrames = await getFrames(dataSet, transferSyntax);
-  const pixelDescription = getImagePixelDescription(
-    dataSet,
-    transferSyntax.byteOrdering
-  );
+  const decodedImage = await getFrames(dataSet, transferSyntax);
+
   const pixelTransformation = getImagePixelTransformation(dataSet);
 
   const imageData = renderer.render(
-    decodedFrames[0],
+    decodedImage.frames[0],
     transferSyntax.byteOrdering,
-    pixelDescription,
+    decodedImage.pixelDescription,
     pixelTransformation
   );
 

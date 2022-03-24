@@ -1,7 +1,12 @@
 import { FrameDecoder, PixelDataDecoder } from "./types";
 
-const decode: PixelDataDecoder = async function decode(data) {
-  return Promise.all([decodeFrame(data)]);
+const decode: PixelDataDecoder = async function decode(
+  data,
+  _,
+  pixelDescription
+) {
+  const frames = await Promise.all([decodeFrame(data)]);
+  return { frames, pixelDescription };
 };
 
 const decodeFrame: FrameDecoder = async function (data) {

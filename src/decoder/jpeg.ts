@@ -4,14 +4,18 @@ import { pixelDataToFragments, fragmentsToFrames } from "./utils";
 
 let decoder: JPEGDecoder;
 
-const decode: PixelDataDecoder = async function (data, encoding) {
+const decode: PixelDataDecoder = async function (
+  data,
+  encoding,
+  pixelDescription
+) {
   const fragments = pixelDataToFragments(data, encoding);
-  const frames = fragmentsToFrames(fragments);
-  const decoded = [];
-  for (const frame of frames) {
-    decoded.push(await decodeFrame(frame));
+  const encodedFrames = fragmentsToFrames(fragments);
+  const frames = [];
+  for (const encodedFrame of encodedFrames) {
+    frames.push(await decodeFrame(encodedFrame));
   }
-  return decoded;
+  return { frames, pixelDescription };
 };
 
 const decodeFrame: FrameDecoder = async function (data) {
