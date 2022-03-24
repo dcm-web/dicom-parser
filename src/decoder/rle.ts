@@ -1,6 +1,7 @@
 import { interleaveUint8Array } from "./utils";
-import { PixelDataDecoder } from "./types";
+import { DataEncoding, PixelDataDecoder } from "./types";
 import { pixelDataToFragments } from "./utils";
+import { swapBytes } from "../utils";
 
 const decode: PixelDataDecoder = async function (
   data,
@@ -13,7 +14,14 @@ const decode: PixelDataDecoder = async function (
   if (frameNumbers) {
     encodedFrames = encodedFrames.filter((_, i) => frameNumbers.includes(i));
   }
-  const frames = encodedFrames.map(decodeFrame);
+  let frames = encodedFrames.map((encodedFrame) => decodeFrame(encodedFrame));
+
+  // swap bytes to match expected endianness
+  const bytesAllocated = Math.ceil(pixelDescription.bitsAllocated / 8);
+  if (encoding.littleEndian && bytesAllocated > 1) {
+    frames = frames.map((frame) => swapBytes(frame, bytesAllocated));
+  }
+
   return Promise.resolve({ frames, pixelDescription });
 };
 
