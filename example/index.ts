@@ -1,15 +1,14 @@
 import {
   parser,
   renderer,
-  getImagePixelDescription,
   getImagePixelTransformation,
   getFrames,
 } from "../src/index";
 
 async function render(dataView: DataView) {
   const { dataSet, transferSyntax } = parser.parse(dataView);
-  const decodedImage = await getFrames(dataSet, transferSyntax);
-
+  const decodedImage = await getFrames(dataSet, transferSyntax, [0]);
+  console.log(decodedImage);
   const pixelTransformation = getImagePixelTransformation(dataSet);
 
   const imageData = renderer.render(

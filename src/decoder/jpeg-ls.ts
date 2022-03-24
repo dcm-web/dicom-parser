@@ -1,19 +1,23 @@
 import CharLS from "charls";
-import { FrameDecoder, PixelDataDecoder } from "./types";
+import { PixelDataDecoder } from "./types";
 import { pixelDataToFragments, fragmentsToFrames } from "./utils";
 
 const decode: PixelDataDecoder = async function (
   data,
   encoding,
-  pixelDescription
+  pixelDescription,
+  frameNumbers
 ) {
   const fragments = pixelDataToFragments(data, encoding);
-  const encodedFrames = fragmentsToFrames(fragments);
+  let encodedFrames = fragmentsToFrames(fragments);
+  if (frameNumbers) {
+    encodedFrames = encodedFrames.filter((_, i) => frameNumbers.includes(i));
+  }
   const frames = await Promise.all(encodedFrames.map(decodeFrame));
   return { frames, pixelDescription };
 };
 
-const decodeFrame: FrameDecoder = async function (data) {
+const decodeFrame = async function (data: DataView) {
   const charLS = await CharLS();
   const decoder = new charLS.JpegLSDecoder();
 

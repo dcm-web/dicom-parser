@@ -13,7 +13,8 @@ import { TransferSyntax } from "./parser/transferSyntax";
 
 export async function getFrames(
   dataSet: parser.DataSet,
-  transferSyntax: TransferSyntax
+  transferSyntax: TransferSyntax,
+  frameNumbers?: number[]
 ) {
   const pixelDataElement = dataSet["(7fe0,0010)"];
   const decodeFn = decoder.pixelDecoderForTransferSyntax(transferSyntax.uid);
@@ -30,7 +31,8 @@ export async function getFrames(
       littleEndian: transferSyntax.byteOrdering === "Little Endian",
       implicitVR: transferSyntax.implicitVR,
     },
-    pixelDescription
+    pixelDescription,
+    frameNumbers
   );
 }
 

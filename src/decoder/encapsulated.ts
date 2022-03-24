@@ -1,21 +1,23 @@
-import { FrameDecoder, PixelDataDecoder } from "./types";
+import { PixelDataDecoder } from "./types";
 import { pixelDataToFragments } from "./utils";
 
 const decode: PixelDataDecoder = async function decode(
   data,
   encoding,
-  pixelDescription
+  pixelDescription,
+  frameNumbers
 ) {
   const fragments = pixelDataToFragments(data, encoding);
-  const [, ...encodedFrames] = fragments;
-  const frames = await Promise.all(encodedFrames.map(decodeFrame));
-  return { frames, pixelDescription };
+  let [, ...encodedFrames] = fragments;
+  if (frameNumbers) {
+    encodedFrames = encodedFrames.filter((_, i) => frameNumbers.includes(i));
+  }
+  const frames = encodedFrames.map(decodeFrame);
+  return Promise.resolve({ frames, pixelDescription });
 };
 
-const decodeFrame: FrameDecoder = async function (data) {
-  return Promise.resolve(
-    new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-  );
+const decodeFrame = function (data: DataView): Uint8Array {
+  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 };
 
 export default decode;

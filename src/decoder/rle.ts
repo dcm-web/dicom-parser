@@ -1,19 +1,23 @@
 import { interleaveUint8Array } from "./utils";
-import { FrameDecoder, PixelDataDecoder } from "./types";
+import { PixelDataDecoder } from "./types";
 import { pixelDataToFragments } from "./utils";
 
 const decode: PixelDataDecoder = async function (
   data,
   encoding,
-  pixelDescription
+  pixelDescription,
+  frameNumbers
 ) {
   const fragments = pixelDataToFragments(data, encoding);
-  const [, ...encodedFrames] = fragments;
-  const frames = await Promise.all(encodedFrames.map(decodeFrame));
-  return { frames, pixelDescription };
+  let [, ...encodedFrames] = fragments;
+  if (frameNumbers) {
+    encodedFrames = encodedFrames.filter((_, i) => frameNumbers.includes(i));
+  }
+  const frames = encodedFrames.map(decodeFrame);
+  return Promise.resolve({ frames, pixelDescription });
 };
 
-const decodeFrame: FrameDecoder = async function (data) {
+const decodeFrame = function (data: DataView) {
   const segmentOffsets = decodeHeader(data);
   const buffer = new Int8Array(data.buffer, data.byteOffset, data.byteLength);
   const segments = segmentOffsets.map((start, i, offsets) => {
@@ -21,7 +25,7 @@ const decodeFrame: FrameDecoder = async function (data) {
     return decodeSegment(buffer, start, end);
   });
 
-  return Promise.resolve(interleaveUint8Array(segments));
+  return interleaveUint8Array(segments);
 };
 
 /**

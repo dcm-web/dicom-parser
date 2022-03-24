@@ -1,5 +1,5 @@
 import { default as LibJpegTurboPromise, JPEGDecoder } from "libjpeg-turbo";
-import { FrameDecoder, PixelDataDecoder } from "./types";
+import { PixelDataDecoder } from "./types";
 import { pixelDataToFragments, fragmentsToFrames } from "./utils";
 
 let decoder: JPEGDecoder;
@@ -7,10 +7,14 @@ let decoder: JPEGDecoder;
 const decode: PixelDataDecoder = async function (
   data,
   encoding,
-  pixelDescription
+  pixelDescription,
+  frameNumbers
 ) {
   const fragments = pixelDataToFragments(data, encoding);
-  const encodedFrames = fragmentsToFrames(fragments);
+  let encodedFrames = fragmentsToFrames(fragments);
+  if (frameNumbers) {
+    encodedFrames = encodedFrames.filter((_, i) => frameNumbers.includes(i));
+  }
   const frames = [];
   for (const encodedFrame of encodedFrames) {
     frames.push(await decodeFrame(encodedFrame));
@@ -18,7 +22,7 @@ const decode: PixelDataDecoder = async function (
   return { frames, pixelDescription };
 };
 
-const decodeFrame: FrameDecoder = async function (data) {
+const decodeFrame = async function (data: DataView) {
   if (!decoder) {
     const libJpegTurbo = await LibJpegTurboPromise();
     decoder = new libJpegTurbo.JPEGDecoder();

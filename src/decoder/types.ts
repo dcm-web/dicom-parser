@@ -5,7 +5,6 @@ export { DataEncoding } from "../parser/core";
 export type PixelDataDecoder = (
   data: DataView,
   encoding: DataEncoding,
-  pixelDescription: ImagePixelDescription
+  pixelDescription: ImagePixelDescription,
+  frameNumbers?: number[]
 ) => Promise<{ frames: Uint8Array[]; pixelDescription: ImagePixelDescription }>;
-
-export type FrameDecoder = (data: DataView) => Promise<Uint8Array>;
