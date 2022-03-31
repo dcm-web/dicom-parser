@@ -1,16 +1,12 @@
-export declare function parse(data: DataView): DataElementRecord;
-declare type DataLocation = {
-    offset: number;
-    length: number;
-};
-declare type DataElement = {
-    tag: Tag;
-    vr: string | null;
-    value: DataLocation;
-};
-declare type DataElementRecord = Record<string, DataElement>;
-declare type Tag = {
-    group: number;
-    element: number;
-};
-export {};
+import * as parser from "./parser";
+export * as parser from "./parser";
+export * as decoder from "./decoder";
+export * as renderer from "./renderer";
+import { ByteOrdering, ImagePixelDescription, ImagePixelTransformation } from "./types";
+import { TransferSyntax } from "./parser/transferSyntax";
+export declare function getFrames(dataSet: parser.DataSet, transferSyntax: TransferSyntax, frameNumbers?: number[]): Promise<{
+    frames: Uint8Array[];
+    pixelDescription: ImagePixelDescription;
+}>;
+export declare function getImagePixelDescription(dataSet: parser.DataSet, byteOrdering: ByteOrdering): ImagePixelDescription;
+export declare function getImagePixelTransformation(dataSet: parser.DataSet): ImagePixelTransformation;
